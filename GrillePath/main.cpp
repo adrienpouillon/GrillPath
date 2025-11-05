@@ -7,11 +7,24 @@
 #include <conio.h>
 #include <windows.h>
 
-void Draw(char player, char ia, char obstacle);
+#define DEFAULT_WEIGHT 0
 
-std::vector< std::vector<char>> TILES;
+void DrawChara(char player, char ia, char obstacle);
+void DrawWeight(char player, char ia, char obstacle);
 
-int MODE1 = 4;
+struct Cell
+{
+    char mChara;
+    int mWeight;
+    Cell() { mChara = ' '; mWeight = 0; }
+    Cell(char chara, int weight) { mChara = chara; mWeight = weight; }
+    void SetChara(char chara) { mChara = chara; }
+    char GetChara() { return mChara; }
+    void SetWeight(int weight) { mWeight = weight; }
+    int GetWeight() { return mWeight; }
+    void IncreaseWeight() { mWeight++; }
+    void DecreaseWeight() { mWeight--; }
+};
 
 struct Vector2
 {
@@ -19,12 +32,17 @@ struct Vector2
     int mY;
     Vector2() { mX = 0; mY = 0; }
     Vector2(int x, int y) { mX = x; mY = y; }
-    void SetX(int x) { mX = x;}
+    void SetX(int x) { mX = x; }
     void SetY(int y) { mY = y; }
-    void SetXY(int x, int y) {mX = x; mY = y; }
-    int GetX() { return mX;}
-    int GetY() { return mY;}
+    void SetXY(int x, int y) { mX = x; mY = y; }
+    int GetX() { return mX; }
+    int GetY() { return mY; }
 };
+
+std::vector< std::vector<Cell>> TILES;
+//std::vector< std::vector<char>> TILES;
+
+int MODE1 = 5;
 
 int GenerateRandomNumber(int min, int max)
 {
@@ -33,7 +51,71 @@ int GenerateRandomNumber(int min, int max)
     return value;
 }
 
-std::vector< std::vector<char>> StartTab()
+std::vector< std::vector<Cell>> StartTab()
+{
+    std::vector< std::vector<char>> charas{
+                                        { '*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*' },
+                                        { '*','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*' },
+                                        { '*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*','*','*','*','*','*','*' },
+                                        { '*',' ',' ','*',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ',' ',' ',' ','*' },
+                                        { '*',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ',' ','*',' ',' ',' ',' ',' ','*' },
+                                        { '*',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ','*',' ',' ',' ',' ',' ','*' },
+                                        { '*',' ',' ',' ',' ',' ',' ','*',' ',' ','*','*','*','*',' ',' ',' ',' ',' ','*' },
+                                        { '*',' ','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*','*',' ','*' },
+                                        { '*',' ','*','*','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ','*' },
+                                        { '*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*','*','*',' ','*' },
+                                        { '*',' ',' ',' ',' ',' ','*','*',' ',' ','*',' ',' ',' ',' ',' ',' ','*',' ','*' },
+                                        { '*',' ','*','*',' ',' ',' ','*','*',' ','*',' ',' ',' ',' ',' ',' ','*',' ','*' },
+                                        { '*',' ','*',' ',' ','*',' ',' ',' ',' ','*','*',' ',' ',' ',' ','*','*',' ','*' },
+                                        { '*',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ',' ',' ',' ',' ',' ',' ','*' },
+                                        { '*',' ',' ','*',' ','*','*','*','*',' ','*',' ',' ',' ','*','*','*','*',' ','*' },
+                                        { '*','*',' ',' ',' ',' ','*',' ',' ',' ','*',' ',' ',' ','*',' ',' ','*',' ','*' },
+                                        { '*',' ',' ','*','*',' ',' ',' ',' ',' ','*',' ',' ',' ',' ',' ',' ','*',' ','*' },
+                                        { '*',' ',' ',' ','*',' ',' ',' ',' ',' ','*',' ',' ',' ',' ',' ',' ','*',' ','*' },
+                                        { '*',' ','*',' ',' ',' ','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ','*' },
+                                        { '*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*' }
+                                   };
+    std::vector< std::vector<Cell>> tiles = std::vector< std::vector<Cell>>();
+    int lenghti = charas.size();
+    for (int i = 0; i < lenghti; i++)
+    {
+        tiles.push_back(std::vector<Cell>());
+        int lenghtj = charas[i].size();
+        for (int j = 0; j < lenghtj; j++)
+        {
+            char c = charas[i][j];
+            if (c == '*')
+            {
+                tiles[i].push_back(Cell(c, 1000));
+            }
+            else
+            {
+                tiles[i].push_back(Cell(c, DEFAULT_WEIGHT));
+            }
+        }
+    }
+    return tiles;
+}
+
+void LowerAllWeight()
+{
+    int lenghti = TILES.size();
+    for (int i = 0; i < lenghti; i++)
+    {
+        int lenghtj = TILES[i].size();
+        for (int j = 0; j < lenghtj; j++)
+        {
+            TILES[i][j].DecreaseWeight();
+            int w = TILES[i][j].GetWeight();
+            if (w > 20)
+            {
+                TILES[i][j].SetWeight(w * -1);
+            }
+        }
+    }
+}
+
+/*std::vector< std::vector<char>> StartTab()
 {
     return {
                 { '*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*' },
@@ -56,8 +138,8 @@ std::vector< std::vector<char>> StartTab()
                 { '*',' ',' ',' ','*',' ',' ',' ',' ',' ','*',' ',' ',' ',' ',' ',' ','*',' ','*' },
                 { '*',' ','*',' ',' ',' ','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ','*' },
                 { '*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*' }
-           };
-}
+    };
+}*/
 
 void InputPlayer(Vector2* cursorPlayer, char chara, char player, char obstacle)
 {
@@ -104,13 +186,13 @@ void InputPlayer(Vector2* cursorPlayer, char chara, char player, char obstacle)
         }
     }
 
-    if (TILES[newCursorPlayer.GetX()][newCursorPlayer.GetY()] == obstacle)
+    if (TILES[newCursorPlayer.GetX()][newCursorPlayer.GetY()].GetChara() == obstacle)
     {
         newCursorPlayer = *cursorPlayer;
     }
 
-    TILES[cursorPlayer->GetX()][cursorPlayer->GetY()] = ' ';
-    TILES[newCursorPlayer.GetX()][newCursorPlayer.GetY()] = player;
+    TILES[cursorPlayer->GetX()][cursorPlayer->GetY()].SetChara(' ');
+    TILES[newCursorPlayer.GetX()][newCursorPlayer.GetY()].SetChara(player);
     *cursorPlayer = newCursorPlayer;
     //std::cout << cursorPlayer->GetX() << std::endl;
     //std::cout << cursorPlayer->GetY() << std::endl;
@@ -122,8 +204,7 @@ void InputPlayer(Vector2* cursorPlayer, char chara, char player, char obstacle)
 Vector2 IA1(Vector2* cursorIA, Vector2 cursorPlayer)
 {
     Vector2 newCursorIA = *cursorIA;
-    //newCursorIA.SetX(0);
-    //newCursorIA.SetY(0);
+
 
     newCursorIA.SetX(cursorPlayer.GetX());
     newCursorIA.SetY(cursorPlayer.GetY());
@@ -161,7 +242,7 @@ Vector2 IA2(Vector2* cursorIA, Vector2 cursorPlayer)
             newCursorIA.SetY(iaY - 1);
         }
 
-        TILES[newCursorIA.GetX()][newCursorIA.GetY()] = '+';
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('+');
     }
 
     return newCursorIA;
@@ -169,11 +250,12 @@ Vector2 IA2(Vector2* cursorIA, Vector2 cursorPlayer)
 
 bool IAMoveX(bool haveMove, Vector2* newCursorIA, bool condition, int iaDir, char obstacle)
 {
-    if (haveMove == false && TILES[iaDir][newCursorIA->GetY()] != obstacle)
+    if (haveMove == false && TILES[iaDir][newCursorIA->GetY()].GetChara() != obstacle)
     {
         if (condition)
         {
             newCursorIA->SetX(iaDir);
+            TILES[iaDir][newCursorIA->GetY()].IncreaseWeight();
             return true;
         }
     }
@@ -182,11 +264,12 @@ bool IAMoveX(bool haveMove, Vector2* newCursorIA, bool condition, int iaDir, cha
 
 bool IAMoveY(bool haveMove, Vector2* newCursorIA, bool condition, int iaDir, char obstacle)
 {
-    if (haveMove == false && TILES[newCursorIA->GetX()][iaDir] != obstacle)
+    if (haveMove == false && TILES[newCursorIA->GetX()][iaDir].GetChara() != obstacle)
     {
         if (condition)
         {
             newCursorIA->SetY(iaDir);
+            TILES[newCursorIA->GetX()][iaDir].IncreaseWeight();
             return true;
         }
     }
@@ -195,11 +278,14 @@ bool IAMoveY(bool haveMove, Vector2* newCursorIA, bool condition, int iaDir, cha
 
 bool IAMoveX(bool haveMove, Vector2* newCursorIA, bool condition, int iaDir, char path, char trail, char player)
 {
-    if (haveMove == false && TILES[iaDir][newCursorIA->GetY()] == path || TILES[iaDir][newCursorIA->GetY()] == trail || TILES[iaDir][newCursorIA->GetY()] == player)
+    if (haveMove == false && (TILES[iaDir][newCursorIA->GetY()].GetChara() == path
+                          || TILES[iaDir][newCursorIA->GetY()].GetChara() == trail
+                          || TILES[iaDir][newCursorIA->GetY()].GetChara() == player))
     {
         if (condition)
         {
             newCursorIA->SetX(iaDir);
+            TILES[iaDir][newCursorIA->GetY()].IncreaseWeight();
             return true;
         }
     }
@@ -208,11 +294,14 @@ bool IAMoveX(bool haveMove, Vector2* newCursorIA, bool condition, int iaDir, cha
 
 bool IAMoveY(bool haveMove, Vector2* newCursorIA, bool condition, int iaDir, char path, char trail, char player)
 {
-    if (haveMove == false && TILES[newCursorIA->GetX()][iaDir] == path || TILES[newCursorIA->GetX()][iaDir] == trail || TILES[newCursorIA->GetX()][iaDir] == player)
+    if (haveMove == false && (TILES[newCursorIA->GetX()][iaDir].GetChara() == path
+                          || TILES[newCursorIA->GetX()][iaDir].GetChara() == trail
+                          || TILES[newCursorIA->GetX()][iaDir].GetChara() == player))
     {
         if (condition)
         {
             newCursorIA->SetY(iaDir);
+            TILES[newCursorIA->GetX()][iaDir].IncreaseWeight();
             return true;
         }
     }
@@ -282,121 +371,13 @@ Vector2 IA3(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
             }
         }
 
-        TILES[newCursorIA.GetX()][newCursorIA.GetY()] = '-';
-        Draw(player, ia, obstacle);
-        TILES[newCursorIA.GetX()][newCursorIA.GetY()] = '+';
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('-');
+        DrawChara(player, ia, obstacle);
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(trail);
     }
 
     return newCursorIA;
 }
-
-/*Vector2 IA4(Vector2* cursorIA, Vector2 cursorPlayer)
-{
-    Vector2 newCursorIA = *cursorIA;
-
-    float dis_m = abs(newCursorIA.GetX() - cursorPlayer.GetX()) + abs(newCursorIA.GetY() - cursorPlayer.GetX());
-
-    int pX = cursorPlayer.GetX();
-    int pY = cursorPlayer.GetY();
-
-    int baitX = 0;
-    int baitY = 0;
-
-    int nbBait = 0;
-    int nbBaitMax = 10;
-
-    int min = -1;
-    int max = 1;
-
-    while (newCursorIA.GetX() != pX || newCursorIA.GetY() != pY)
-    {
-        if (nbBait > nbBaitMax)
-        {
-            baitX = 0;
-            baitY = 0;
-            nbBait = 0;
-            nbBaitMax += 10;
-            max += GenerateRandomNumber(0, 1);
-        }
-
-        int iaX = newCursorIA.GetX();
-        int iaY = newCursorIA.GetY();
-
-        int pBaitX = pX + baitX;
-        int pBaitY = pY + baitY;
-
-        int iaRight = iaX + 1;
-        int iaLeft = iaX - 1;
-        int iaDown = iaY + 1;
-        int iaUp = iaY - 1;
-
-        bool haveMove = false;
-
-        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, '*');
-        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, '*');
-        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, '*');
-        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, '*');
-
-        if (haveMove == false)
-        {
-            switch (GenerateRandomNumber(0, 8))
-            {
-            case 0:
-                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaRight, '*');
-                if (haveMove) { baitX++; break; }
-            case 1:
-                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaLeft, '*');
-                if (haveMove) { baitX--; break; }
-            case 2:
-                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaDown, '*');
-                if (haveMove) { baitY++; break; }
-            case 3:
-                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaUp, '*');
-                if (haveMove) { baitY--; break; }
-            case 4:
-                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaRight, '*');
-                if (haveMove) { baitX++; break; }
-            case 5:
-                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaLeft, '*');
-                if (haveMove) { baitX--; break; }
-            case 6:
-                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaDown, '*');
-                if (haveMove) { baitY++; break; }
-            case 7:
-                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaUp, '*');
-                if (haveMove) { baitY--; break; }
-            case 8 :
-                if (haveMove == false) 
-                {
-                    int rand = GenerateRandomNumber(-1, 1);
-                    if (rand == 1)
-                    {
-                        baitX += GenerateRandomNumber(-max, max);
-                        break;
-                    }
-                    else if (rand == -1)
-                    {
-                        baitY += GenerateRandomNumber(-max, max);
-                        break;
-                    }
-                    if (rand == 0)
-                    {
-                        baitX += GenerateRandomNumber(-max, max);
-                        baitY += GenerateRandomNumber(-max, max);
-                        break;
-                    }
-                }
-            }
-            nbBait++;
-        }
-
-        TILES[newCursorIA.GetX()][newCursorIA.GetY()] = '-';
-        Draw();
-        TILES[newCursorIA.GetX()][newCursorIA.GetY()] = '+';
-    }
-
-    return newCursorIA;
-}*/
 
 Vector2 IA4(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char player, char ia, char obstacle)
 {
@@ -498,9 +479,262 @@ Vector2 IA4(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
             nbBait++;
         }
 
-        TILES[newCursorIA.GetX()][newCursorIA.GetY()] = '-';
-        Draw(player, ia, obstacle);
-        TILES[newCursorIA.GetX()][newCursorIA.GetY()] = trail;
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('-');
+        DrawChara(player, ia, obstacle);
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(trail);
+    }
+
+    return newCursorIA;
+}
+
+int LessWeight(int w1, int w2, int w3, int w4)
+{
+    // Remplacer les valeurs négatives par un nombre très grand (ignorées)
+    if (w1 < 0) w1 = INT_MAX;
+    if (w2 < 0) w2 = INT_MAX;
+    if (w3 < 0) w3 = INT_MAX;
+    if (w4 < 0) w4 = INT_MAX;
+
+    int minW = (std::min)((std::min)(w1, w2), (std::min)(w3, w4));
+
+    if (minW == INT_MAX)
+        return 0; // aucun poids valide
+
+    int result = 0;
+    if (w1 == minW) result = result * 10 + 1;
+    if (w2 == minW) result = result * 10 + 2;
+    if (w3 == minW) result = result * 10 + 3;
+    if (w4 == minW) result = result * 10 + 4;
+
+    return result;
+}
+
+Vector2 IA5(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char player, char ia, char obstacle)
+{
+    Vector2 newCursorIA = *cursorIA;
+
+    float dis_m = abs(newCursorIA.GetX() - cursorPlayer.GetX()) + abs(newCursorIA.GetY() - cursorPlayer.GetX());
+
+    int pX = cursorPlayer.GetX();
+    int pY = cursorPlayer.GetY();
+
+    int baitX = 0;
+    int baitY = 0;
+
+    int nbBait = 0;
+    int nbBaitMax = 10;
+
+    int min = -1;
+    int max = 1;
+
+    while (newCursorIA.GetX() != pX || newCursorIA.GetY() != pY)
+    {
+        if (nbBait > nbBaitMax)
+        {
+            baitX = 0;
+            baitY = 0;
+            nbBait = 0;
+            nbBaitMax += 10;
+            max += GenerateRandomNumber(0, 1);
+        }
+
+        int iaX = newCursorIA.GetX();
+        int iaY = newCursorIA.GetY();
+
+        int pBaitX = pX + baitX;
+        int pBaitY = pY + baitY;
+
+        int iaRight = iaX + 1;
+        int iaLeft = iaX - 1;
+        int iaDown = iaY + 1;
+        int iaUp = iaY - 1;
+
+        bool haveMove = false;
+
+        int weightRight = TILES[iaRight][newCursorIA.GetY()].GetWeight();
+        int weightLeft = TILES[iaLeft][newCursorIA.GetY()].GetWeight();
+        int weightDown = TILES[newCursorIA.GetX()][iaDown].GetWeight();
+        int weightUp = TILES[newCursorIA.GetX()][iaUp].GetWeight();
+        
+        int lessWeight = LessWeight(weightRight, weightLeft, weightDown, weightUp);
+        switch (lessWeight)
+        {
+        case 1:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            break;
+        case 2:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            break;
+        case 3:
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            break;
+        case 4:
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            break;
+        case 12:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            break;
+        case 13:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            break;
+        case 14:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            break;
+        case 23:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            break;
+        case 24:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            break;
+        case 34:
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            break;
+        case 123:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            break;
+        case 124:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            break;
+        case 134:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            break;
+        case 234:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            break;
+        case 1234:
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            break;
+        }
+
+        if (haveMove == false)
+        {
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+        }
+
+        if (haveMove == false)
+        {
+            switch (GenerateRandomNumber(0, 8))
+            {
+            case 0:
+                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaRight, path, trail, player);
+                if (haveMove) { baitX++; break; }
+            case 1:
+                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaLeft, path, trail, player);
+                if (haveMove) { baitX--; break; }
+            case 2:
+                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaDown, path, trail, player);
+                if (haveMove) { baitY++; break; }
+            case 3:
+                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaUp, path, trail, player);
+                if (haveMove) { baitY--; break; }
+            case 4:
+                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaRight, path, trail, player);
+                if (haveMove) { baitX++; break; }
+            case 5:
+                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaLeft, path, trail, player);
+                if (haveMove) { baitX--; break; }
+            case 6:
+                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaDown, path, trail, player);
+                if (haveMove) { baitY++; break; }
+            case 7:
+                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaUp, path, trail, player);
+                if (haveMove) { baitY--; break; }
+            case 8:
+                if (haveMove == false)
+                {
+                    int rand = GenerateRandomNumber(-1, 1);
+                    switch (lessWeight)
+                    {
+                    case 1:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+                        break;
+                    case 2:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+                        break;
+                    case 3:
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        break;
+                    case 4:
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        break;
+                    case 12:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+                        break;
+                    case 13:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        break;
+                    case 14:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        break;
+                    case 23:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        break;
+                    case 24:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        break;
+                    case 34:
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        break;
+                    case 123:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        break;
+                    case 124:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        break;
+                    case 134:
+                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        break;
+                    case 234:
+                        baitX--;
+                        baitY++;
+                        baitY--;
+                        break;
+                    case 1234:
+                        baitX++;
+                        baitX--;
+                        baitY++;
+                        baitY--;
+                        break;
+                    }
+            }
+            nbBait++;
+        }
+
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('-');
+        DrawWeight(player, ia, obstacle);
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(trail);
     }
 
     return newCursorIA;
@@ -515,7 +749,7 @@ int TileHaveNbChara(char chara1)
         int lenghtj = TILES[i].size();
         for (int j = 0; j < lenghtj; j++)
         {
-            if (TILES[i][j] == chara1)
+            if (TILES[i][j].GetChara() == chara1)
             {
                 nb++;
             }
@@ -528,44 +762,36 @@ void InputIA(Vector2* cursorIA, Vector2 cursorPlayer, char chara, char player, c
 {
     Vector2 newCursorIA = *cursorIA;
     
+    
     switch (chara)
     {
     case ' ':
+        TILES = StartTab();
+        TILES[cursorPlayer.GetX()][cursorPlayer.GetY()].SetChara(player);
+        TILES[cursorIA->GetX()][cursorIA->GetY()].SetChara(ia);
+
         int nb = 1;
         std::vector<char> trail = { ' ', '+', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-        /*switch (MODE1)
-        {
-        case 1:
-            newCursorIA = IA1(cursorIA, cursorPlayer);
-            break;
-        case 2:
-            newCursorIA = IA2(cursorIA, cursorPlayer);
-            break;
-        case 3:
-            newCursorIA = IA3(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle);
-            break;
-        case 4:
-            newCursorIA = IA4(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle);
-            break;
-        }
-        nb += 1;*/
         while (true)
         {
             if (MODE1 == 1) { newCursorIA = IA1(cursorIA, cursorPlayer); }
             if (MODE1 == 2) { newCursorIA = IA2(cursorIA, cursorPlayer); }
             if (MODE1 == 3) { newCursorIA = IA3(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
             if (MODE1 == 4) { newCursorIA = IA4(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
-            nb++;
-            if (TileHaveNbChara(trail[nb - 1]) == 0 || nb > trail.size())
+            if (MODE1 == 5) { newCursorIA = IA5(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
+            int nb_former_trail = TileHaveNbChara(trail[nb - 1]);
+            if (nb_former_trail == 0 || nb > trail.size())
             {
                 break;
             }
+            LowerAllWeight();
+            nb++;
         }
         break;
     }
 
-    TILES[cursorIA->GetX()][cursorIA->GetY()] = '+';
-    TILES[newCursorIA.GetX()][newCursorIA.GetY()] = ia;
+    TILES[cursorIA->GetX()][cursorIA->GetY()].SetChara('@');
+    TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(ia);
     *cursorIA = newCursorIA;
 }
 
@@ -586,7 +812,7 @@ void Input(Vector2* cursorPlayer, Vector2* cursorIA, char player, char ia, char 
     }
 }
 
-void Draw(char player, char ia, char obstacle)
+void DrawChara(char player, char ia, char obstacle)
 {
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
     system("cls");
@@ -597,7 +823,7 @@ void Draw(char player, char ia, char obstacle)
         for (int j = 0; j < lenghtj; j++)
         {
             std::cout << "[";
-            char c = TILES[i][j];
+            char c = TILES[i][j].GetChara();
             if (c == '*')
             {
                 SetConsoleTextAttribute(console, (FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN) * 2.f );
@@ -637,15 +863,107 @@ void Draw(char player, char ia, char obstacle)
         std::cout << std::endl;
     }
 }
+void DrawNumber(int nb)
+{
+    if (nb > -1)
+    {
+        if (nb < 10)
+        {
+            std::cout << "000" << nb;
+        }
+        else if (nb < 100)
+        {
+            std::cout << "00" << nb;
+        }
+        else if (nb < 1000)
+        {
+            std::cout << "0" << nb;
+        }
+        else if (nb < 10000)
+        {
+            std::cout << nb;
+        }
+    }
+    else
+    {
+        nb *= -1;
+        if (nb < 10)
+        {
+            std::cout << "-00" << nb;
+        }
+        else if (nb < 100)
+        {
+            std::cout << "-0" << nb;
+        }
+        else if (nb < 1000)
+        {
+            std::cout << "-" << nb;
+        }
+    }
+    
+}
+
+void DrawWeight(char player, char ia, char obstacle)
+{
+    HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+    system("cls");
+    int lenghti = TILES.size();
+    for (int i = 0; i < lenghti; i++)
+    {
+        int lenghtj = TILES[i].size();
+        for (int j = 0; j < lenghtj; j++)
+        {
+            std::cout << "[";
+            char c = TILES[i][j].GetChara();
+            int w = TILES[i][j].GetWeight();
+            if (c == '*')
+            {
+                SetConsoleTextAttribute(console, (FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN) * 2.f);
+                DrawNumber(w);
+                SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
+            }
+            else if (c == '+')
+            {
+                SetConsoleTextAttribute(console, FOREGROUND_GREEN);
+                DrawNumber(w);
+                SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
+            }
+            else if (c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
+            {
+                SetConsoleTextAttribute(console, FOREGROUND_GREEN * ((int)c / 10));
+                DrawNumber(w);
+                SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
+            }
+            else if (c == '-' || c == ia)
+            {
+                SetConsoleTextAttribute(console, FOREGROUND_RED);
+                DrawNumber(w);
+                SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
+            }
+            else if (c == player)
+            {
+                SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED);
+                DrawNumber(w);
+                SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
+            }
+            else
+            {
+                DrawNumber(w);
+            }
+            std::cout << "]";
+        }
+        std::cout << std::endl;
+    }
+}
 
 int main()
 {
     srand(0);
     TILES = StartTab();
     Vector2 cursorPlayer(8, 5);
-    TILES[cursorPlayer.GetX()][cursorPlayer.GetY()] = '0';
+    TILES[cursorPlayer.GetX()][cursorPlayer.GetY()].SetChara('0');
     Vector2 cursorIA(5, 5);
-    TILES[cursorIA.GetX()][cursorIA.GetY()] = 'x';
+    TILES[cursorIA.GetX()][cursorIA.GetY()].SetChara('x');
     bool end = false;
 
     char obstacle = '*';
@@ -653,7 +971,7 @@ int main()
     char ia = 'x';
     while (true)
     {
-        Draw(player, ia, obstacle);
+        DrawChara(player, ia, obstacle);
 
         Input(&cursorPlayer, &cursorIA, player, ia, obstacle);
 
