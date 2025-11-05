@@ -666,55 +666,55 @@ Vector2 IA5(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
                     switch (lessWeight)
                     {
                     case 1:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+                        baitX++;
                         break;
                     case 2:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+                        baitX--;
                         break;
                     case 3:
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        baitY++;
                         break;
                     case 4:
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        baitY--;
                         break;
                     case 12:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+                        baitX++;
+                        baitX--;
                         break;
                     case 13:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        baitX++;
+                        baitY++;
                         break;
                     case 14:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        baitX++;
+                        baitY--;
                         break;
                     case 23:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        baitX--;
+                        baitY++;
                         break;
                     case 24:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        baitX--;
+                        baitY--;
                         break;
                     case 34:
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        baitY++;
+                        baitY--;
                         break;
                     case 123:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+                        baitX++;
+                        baitX--;
+                        baitY++;
                         break;
                     case 124:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        baitX++;
+                        baitX--;
+                        baitY--;
                         break;
                     case 134:
-                        haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
-                        haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+                        baitX++;
+                        baitY++;
+                        baitY--;
                         break;
                     case 234:
                         baitX--;
@@ -728,6 +728,7 @@ Vector2 IA5(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
                         baitY--;
                         break;
                     }
+                }
             }
             nbBait++;
         }
@@ -812,6 +813,15 @@ void Input(Vector2* cursorPlayer, Vector2* cursorIA, char player, char ia, char 
     }
 }
 
+float HighWeight(int weight)
+{
+    if ((weight > 20 && weight < 900) || (weight < 0))
+    {
+        return 0.1f;
+    }
+    return 1.f;
+}
+
 void DrawChara(char player, char ia, char obstacle)
 {
     HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -823,34 +833,36 @@ void DrawChara(char player, char ia, char obstacle)
         for (int j = 0; j < lenghtj; j++)
         {
             std::cout << "[";
-            char c = TILES[i][j].GetChara();
+            Cell cell = TILES[i][j];
+            char c = cell.GetChara();
+            int w = cell.GetWeight();
             if (c == '*')
             {
-                SetConsoleTextAttribute(console, (FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN) * 2.f );
+                SetConsoleTextAttribute(console, ((FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN) * 2.f) * HighWeight(w));
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
             else if (c == '+')
             {
-                SetConsoleTextAttribute(console,FOREGROUND_GREEN);
+                SetConsoleTextAttribute(console,(FOREGROUND_GREEN) * HighWeight(w));
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
             else if (c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
             {
-                SetConsoleTextAttribute(console, FOREGROUND_GREEN * ((int)c/10));
+                SetConsoleTextAttribute(console, (FOREGROUND_GREEN * ((int)c/10) | FOREGROUND_RED * ((int)c / 20) | FOREGROUND_BLUE * ((int)c / 30)) * HighWeight(w));
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
             else if (c == '-' || c == ia)
             {
-                SetConsoleTextAttribute(console,FOREGROUND_RED);
+                SetConsoleTextAttribute(console,(FOREGROUND_RED) * HighWeight(w));
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
             else if (c == player)
             {
-                SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED);
+                SetConsoleTextAttribute(console, (FOREGROUND_BLUE | FOREGROUND_RED) * HighWeight(w));
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
@@ -863,6 +875,7 @@ void DrawChara(char player, char ia, char obstacle)
         std::cout << std::endl;
     }
 }
+
 void DrawNumber(int nb)
 {
     if (nb > -1)
@@ -900,7 +913,6 @@ void DrawNumber(int nb)
             std::cout << "-" << nb;
         }
     }
-    
 }
 
 void DrawWeight(char player, char ia, char obstacle)
