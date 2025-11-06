@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <conio.h>
 #include <windows.h>
+#include <queue>
 
 #define DEFAULT_WEIGHT 0
 
@@ -16,14 +17,40 @@ struct Cell
 {
     char mChara;
     int mWeight;
-    Cell() { mChara = ' '; mWeight = 0; }
-    Cell(char chara, int weight) { mChara = chara; mWeight = weight; }
+    Vector2 mXY;
+    bool mVisited;
+    Cell* mCallMe;
+    int mDisStart;
+    int mDisEnd;
+
+    Cell() { mChara = ' '; mWeight = 0; mXY = Vector2(0, 0);  mVisited = false; mCallMe = nullptr; }
+    Cell(char chara, Vector2 xy) { mChara = chara; mWeight = 0; mXY = xy;  mVisited = false; mCallMe = nullptr; }
+    Cell(char chara, Vector2 xy, bool visited, Cell* callMe) { mChara = chara; mXY = xy; mVisited = visited; mCallMe = callMe; }
+    Cell(char chara, int weight, Vector2 xy) { mChara = chara; mWeight = weight; mXY = xy; }
+    Cell(char chara, int weight, Vector2 xy, bool visited, Cell* callMe) { mChara = chara; mWeight = weight; mXY = xy; mVisited = visited; mCallMe = callMe; }
+    
     void SetChara(char chara) { mChara = chara; }
     char GetChara() { return mChara; }
+
     void SetWeight(int weight) { mWeight = weight; }
     int GetWeight() { return mWeight; }
     void IncreaseWeight() { mWeight++; }
     void DecreaseWeight() { mWeight--; }
+
+    void SetXY(Vector2 xy) { mXY = xy; }
+    Vector2 GetXY() { return mXY; }
+
+    void SetVisited(bool visited) { mVisited = visited; }
+    bool GetVisited() { return mVisited; }
+
+    void SetCallMe(Cell* callMe) { mCallMe = callMe; }
+    Cell* GetCallMe() { return mCallMe; }
+
+    void SetDisStart(int dis) { mDisStart = dis; }
+    int GetDisStart() { return mDisStart; }
+
+    void SetDisEnd(int dis) { mDisEnd = dis; }
+    int GetDisEnd() { return mDisEnd; }
 };
 
 struct Vector2
@@ -39,10 +66,26 @@ struct Vector2
     int GetY() { return mY; }
 };
 
+struct CompareBFS
+{
+    bool operator()(Cell* a, Cell* b)
+    {
+        return a->GetDisStart() > b->GetDisStart();
+    }
+};
+
+struct CompareASTAR
+{
+    bool operator()(Cell* a, Cell* b)
+    {
+        return a->GetDisStart() + a->GetDisEnd() > b->GetDisStart() + b->GetDisEnd();
+    }
+};
+
 std::vector< std::vector<Cell>> TILES;
 //std::vector< std::vector<char>> TILES;
 
-int MODE1 = 5;
+int MODE1 = 6;
 
 int GenerateRandomNumber(int min, int max)
 {
@@ -86,18 +129,18 @@ std::vector< std::vector<Cell>> StartTab()
             char c = charas[i][j];
             if (c == '*')
             {
-                tiles[i].push_back(Cell(c, 1000));
+                tiles[i].push_back(Cell(c, 1000, Vector2(i,j)));
             }
             else
             {
-                tiles[i].push_back(Cell(c, DEFAULT_WEIGHT));
+                tiles[i].push_back(Cell(c, DEFAULT_WEIGHT, Vector2(i, j)));
             }
         }
     }
     return tiles;
 }
 
-void LowerAllWeight()
+void LowerAllWeight(int thresholdWeight)
 {
     int lenghti = TILES.size();
     for (int i = 0; i < lenghti; i++)
@@ -107,39 +150,13 @@ void LowerAllWeight()
         {
             TILES[i][j].DecreaseWeight();
             int w = TILES[i][j].GetWeight();
-            if (w > 20)
+            if (w > thresholdWeight)
             {
                 TILES[i][j].SetWeight(w * -1);
             }
         }
     }
 }
-
-/*std::vector< std::vector<char>> StartTab()
-{
-    return {
-                { '*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*' },
-                { '*','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*' },
-                { '*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*','*','*','*','*','*','*' },
-                { '*',' ',' ','*',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ',' ',' ',' ','*' },
-                { '*',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ',' ','*',' ',' ',' ',' ',' ','*' },
-                { '*',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ','*',' ',' ',' ',' ',' ','*' },
-                { '*',' ',' ',' ',' ',' ',' ','*',' ',' ','*','*','*','*',' ',' ',' ',' ',' ','*' },
-                { '*',' ','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*','*',' ','*' },
-                { '*',' ','*','*','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ','*' },
-                { '*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*','*','*',' ','*' },
-                { '*',' ',' ',' ',' ',' ','*','*',' ',' ','*',' ',' ',' ',' ',' ',' ','*',' ','*' },
-                { '*',' ','*','*',' ',' ',' ','*','*',' ','*',' ',' ',' ',' ',' ',' ','*',' ','*' },
-                { '*',' ','*',' ',' ','*',' ',' ',' ',' ','*','*',' ',' ',' ',' ','*','*',' ','*' },
-                { '*',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ',' ',' ',' ',' ',' ',' ',' ','*' },
-                { '*',' ',' ','*',' ','*','*','*','*',' ','*',' ',' ',' ','*','*','*','*',' ','*' },
-                { '*','*',' ',' ',' ',' ','*',' ',' ',' ','*',' ',' ',' ','*',' ',' ','*',' ','*' },
-                { '*',' ',' ','*','*',' ',' ',' ',' ',' ','*',' ',' ',' ',' ',' ',' ','*',' ','*' },
-                { '*',' ',' ',' ','*',' ',' ',' ',' ',' ','*',' ',' ',' ',' ',' ',' ','*',' ','*' },
-                { '*',' ','*',' ',' ',' ','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*',' ','*' },
-                { '*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*' }
-    };
-}*/
 
 void InputPlayer(Vector2* cursorPlayer, char chara, char player, char obstacle)
 {
@@ -192,13 +209,11 @@ void InputPlayer(Vector2* cursorPlayer, char chara, char player, char obstacle)
     }
 
     TILES[cursorPlayer->GetX()][cursorPlayer->GetY()].SetChara(' ');
-    TILES[newCursorPlayer.GetX()][newCursorPlayer.GetY()].SetChara(player);
+    Cell* cellPlayer = &TILES[newCursorPlayer.GetX()][newCursorPlayer.GetY()];
+    cellPlayer->SetChara(player);
+    cellPlayer->SetWeight(0);
+
     *cursorPlayer = newCursorPlayer;
-    //std::cout << cursorPlayer->GetX() << std::endl;
-    //std::cout << cursorPlayer->GetY() << std::endl;
-    //std::cout << newCursorPlayer.GetX() << std::endl;
-    //std::cout << newCursorPlayer.GetY() << std::endl;
-    
 }
 
 Vector2 IA1(Vector2* cursorIA, Vector2 cursorPlayer)
@@ -561,15 +576,19 @@ Vector2 IA5(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
         {
         case 1:
             haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
+            if (haveMove) { baitX++; }
             break;
         case 2:
             haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
+            if (haveMove) { baitX--; }
             break;
         case 3:
             haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
+            if (haveMove) { baitY++; }
             break;
         case 4:
             haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            if (haveMove) { baitY--; }
             break;
         case 12:
             haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
@@ -625,10 +644,10 @@ Vector2 IA5(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
 
         if (haveMove == false)
         {
-            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX, iaRight, path, trail, player);
-            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX, iaLeft, path, trail, player);
-            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY, iaDown, path, trail, player);
-            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY, iaUp, path, trail, player);
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX < pBaitX && weightRight > -1, iaRight, path, trail, player);
+            haveMove = IAMoveX(haveMove, &newCursorIA, iaX > pBaitX && weightLeft > -1, iaLeft, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY < pBaitY && weightDown > -1, iaDown, path, trail, player);
+            haveMove = IAMoveY(haveMove, &newCursorIA, iaY > pBaitY && weightUp > -1, iaUp, path, trail, player);
         }
 
         if (haveMove == false)
@@ -636,28 +655,28 @@ Vector2 IA5(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
             switch (GenerateRandomNumber(0, 8))
             {
             case 0:
-                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaRight, path, trail, player);
+                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX && weightRight > -1, iaRight, path, trail, player);
                 if (haveMove) { baitX++; break; }
             case 1:
-                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaLeft, path, trail, player);
+                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX && weightLeft > -1, iaLeft, path, trail, player);
                 if (haveMove) { baitX--; break; }
             case 2:
-                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaDown, path, trail, player);
+                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY && weightDown > -1, iaDown, path, trail, player);
                 if (haveMove) { baitY++; break; }
             case 3:
-                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaUp, path, trail, player);
+                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY && weightUp > -1, iaUp, path, trail, player);
                 if (haveMove) { baitY--; break; }
             case 4:
-                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaRight, path, trail, player);
+                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX && weightRight > -1, iaRight, path, trail, player);
                 if (haveMove) { baitX++; break; }
             case 5:
-                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX, iaLeft, path, trail, player);
+                haveMove = IAMoveX(haveMove, &newCursorIA, iaX == pBaitX && weightLeft > -1, iaLeft, path, trail, player);
                 if (haveMove) { baitX--; break; }
             case 6:
-                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaDown, path, trail, player);
+                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY && weightDown > -1, iaDown, path, trail, player);
                 if (haveMove) { baitY++; break; }
             case 7:
-                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY, iaUp, path, trail, player);
+                haveMove = IAMoveY(haveMove, &newCursorIA, iaY == pBaitY && weightUp > -1, iaUp, path, trail, player);
                 if (haveMove) { baitY--; break; }
             case 8:
                 if (haveMove == false)
@@ -741,6 +760,97 @@ Vector2 IA5(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
     return newCursorIA;
 }
 
+int DisToTarget(Cell* current, Cell* end)
+{
+    Vector2 currentPos = current->GetXY();
+    Vector2 endPos = end->GetXY();
+    return abs(currentPos.GetX() - endPos.GetY()) + abs(currentPos.GetY() - endPos.GetY());
+}
+
+Vector2 IA6(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char player, char ia, char obstacle)
+{
+    Vector2 newCursorIA = *cursorIA;
+
+    //std::priority_queue<Cell*, std::vector<Cell*>, CompareBFS> queue = std::priority_queue<Cell*, std::vector<Cell*>, CompareBFS>();
+    std::priority_queue<Cell*, std::vector<Cell*>, CompareASTAR> queue = std::priority_queue<Cell*, std::vector<Cell*>, CompareASTAR>();
+    Cell* cellStart = &TILES[cursorIA->GetX()][cursorIA->GetY()];
+    Cell* cellEnd = &TILES[cursorPlayer.GetX()][cursorPlayer.GetY()];
+    cellStart->SetDisStart(0);
+    cellStart->SetDisEnd(DisToTarget(cellStart, cellEnd));
+    queue.push(cellStart);
+
+
+    while ((int)queue.size() != 0)
+    {
+        Cell* cellIA = queue.top();
+        queue.pop();
+
+        if (cellIA->GetVisited() == true)
+        {
+            continue;
+        }
+
+        newCursorIA = cellIA->GetXY();
+        if (newCursorIA.GetX() == cursorPlayer.GetX() && newCursorIA.GetY() == cursorPlayer.GetY())
+        {
+            return newCursorIA;
+        }
+
+        cellIA->SetVisited(true);
+
+        int iaX = newCursorIA.GetX();
+        int iaY = newCursorIA.GetY();
+
+        int iaRight = iaX + 1;
+        int iaLeft = iaX - 1;
+        int iaDown = iaY + 1;
+        int iaUp = iaY - 1;
+
+        int disStart = cellIA->GetDisStart();
+
+        std::vector<Cell*> neighbor = std::vector<Cell*>();
+
+        neighbor.push_back(&TILES[iaRight][iaY]);
+        neighbor.push_back(&TILES[iaLeft][iaY]);
+        neighbor.push_back(&TILES[iaX][iaDown]);
+        neighbor.push_back(&TILES[iaX][iaUp]);
+
+        for (Cell* cellN : neighbor)
+        {
+            if (cellN->GetVisited() == false && (cellN->GetChara() == path || cellN->GetChara() == trail || cellN->GetChara() == player))
+            {
+                cellN->SetDisStart(disStart + 1);
+                cellN->SetDisEnd(DisToTarget(cellN, cellEnd));
+                cellN->SetCallMe(cellIA);
+
+                queue.push(cellN);
+            }
+        }
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('-');
+        DrawChara(player, ia, obstacle);
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(trail);
+    }
+
+    return Vector2(-1, -1);
+}
+
+void IA6Path(Vector2* cursorIA, Vector2 cursorPlayer, char trail, char player, char ia, char obstacle)
+{
+    Vector2 newCursorIA = *cursorIA;
+    Cell* cellEnd = &TILES[cursorPlayer.GetX()][cursorPlayer.GetY()];
+    Cell* cellBegin = &TILES[cursorIA->GetX()][cursorIA->GetY()];
+    while (cellEnd != cellBegin)
+    {
+        newCursorIA = cellEnd->GetXY();
+
+        cellEnd = cellEnd->GetCallMe();
+
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('-');
+        DrawChara(player, ia, obstacle);
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(trail);
+    }
+}
+
 int TileHaveNbChara(char chara1)
 {
     int nb = 0;
@@ -757,6 +867,25 @@ int TileHaveNbChara(char chara1)
         }
     }
     return nb;
+}
+
+int GetMaxWeight()
+{
+    int bigWeight = 0;
+    int lenghti = TILES.size();
+    for (int i = 0; i < lenghti; i++)
+    {
+        int lenghtj = TILES[i].size();
+        for (int j = 0; j < lenghtj; j++)
+        {
+            int weight = TILES[i][j].GetWeight();
+            if (weight > bigWeight)
+            {
+                bigWeight = weight;
+            }
+        }
+    }
+    return bigWeight;
 }
 
 void InputIA(Vector2* cursorIA, Vector2 cursorPlayer, char chara, char player, char ia, char obstacle)
@@ -780,12 +909,35 @@ void InputIA(Vector2* cursorIA, Vector2 cursorPlayer, char chara, char player, c
             if (MODE1 == 3) { newCursorIA = IA3(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
             if (MODE1 == 4) { newCursorIA = IA4(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
             if (MODE1 == 5) { newCursorIA = IA5(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
-            int nb_former_trail = TileHaveNbChara(trail[nb - 1]);
-            if (nb_former_trail == 0 || nb > trail.size())
+            if (MODE1 == 6) { newCursorIA = IA6(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); IA6Path(cursorIA, cursorPlayer, trail[nb + 1], player, ia, obstacle); }
+            
+            if (MODE1 < 6)
             {
-                break;
+                int nb_former_trail = TileHaveNbChara(trail[nb - 1]);
+
+                int bigWeight = GetMaxWeight();
+
+                if ((nb_former_trail == 0 && bigWeight < 20) || nb > trail.size())
+                {
+                    break;
+                }
+                int weightToDesactive = 20 + (nb * 10);
+                LowerAllWeight(weightToDesactive);
             }
-            LowerAllWeight();
+            else
+            {
+                Cell* cellIA = &TILES[cursorIA->GetX()][cursorIA->GetY()];
+                Cell* cellPlayer = &TILES[cursorIA->GetX()][cursorIA->GetY()];
+                if (newCursorIA.GetX() != -1 && newCursorIA.GetY() != -1)
+                {
+                    cellPlayer->SetChara('@');
+                    cellIA->SetChara(ia);
+                }
+                else
+                {
+                    cellPlayer->SetChara(ia);
+                }
+            }
             nb++;
         }
         break;
@@ -911,6 +1063,10 @@ void DrawNumber(int nb)
         else if (nb < 1000)
         {
             std::cout << "-" << nb;
+        }
+        else if (nb < 10000)
+        {
+            std::cout << "" << nb;
         }
     }
 }
