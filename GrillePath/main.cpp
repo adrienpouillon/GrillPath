@@ -10,8 +10,23 @@
 
 #define DEFAULT_WEIGHT 0
 
+int MODE1 = 7;
+
 void DrawChara(char player, char ia, char obstacle);
 void DrawWeight(char player, char ia, char obstacle);
+
+struct Vector2
+{
+    int mX;
+    int mY;
+    Vector2() { mX = 0; mY = 0; }
+    Vector2(int x, int y) { mX = x; mY = y; }
+    void SetX(int x) { mX = x; }
+    void SetY(int y) { mY = y; }
+    void SetXY(int x, int y) { mX = x; mY = y; }
+    int GetX() { return mX; }
+    int GetY() { return mY; }
+};
 
 struct Cell
 {
@@ -23,10 +38,10 @@ struct Cell
     int mDisStart;
     int mDisEnd;
 
-    Cell() { mChara = ' '; mWeight = 0; mXY = Vector2(0, 0);  mVisited = false; mCallMe = nullptr; }
-    Cell(char chara, Vector2 xy) { mChara = chara; mWeight = 0; mXY = xy;  mVisited = false; mCallMe = nullptr; }
-    Cell(char chara, Vector2 xy, bool visited, Cell* callMe) { mChara = chara; mXY = xy; mVisited = visited; mCallMe = callMe; }
-    Cell(char chara, int weight, Vector2 xy) { mChara = chara; mWeight = weight; mXY = xy; }
+    Cell() { mChara = ' '; mWeight = 0; mXY = Vector2(0, 0);  mVisited = false; mCallMe = nullptr; mDisStart = 0; mDisEnd = 0; }
+    Cell(char chara, Vector2 xy) { mChara = chara; mWeight = 0; mXY = xy;  mVisited = false; mCallMe = nullptr; mDisStart = 0; mDisEnd = 0; }
+    Cell(char chara, Vector2 xy, bool visited, Cell* callMe) { mChara = chara; mXY = xy; mVisited = visited; mCallMe = callMe; mDisStart = 0; mDisEnd = 0; }
+    Cell(char chara, int weight, Vector2 xy) { mChara = chara; mWeight = weight; mXY = xy; mVisited = false; mCallMe = nullptr; }
     Cell(char chara, int weight, Vector2 xy, bool visited, Cell* callMe) { mChara = chara; mWeight = weight; mXY = xy; mVisited = visited; mCallMe = callMe; }
     
     void SetChara(char chara) { mChara = chara; }
@@ -53,19 +68,6 @@ struct Cell
     int GetDisEnd() { return mDisEnd; }
 };
 
-struct Vector2
-{
-    int mX;
-    int mY;
-    Vector2() { mX = 0; mY = 0; }
-    Vector2(int x, int y) { mX = x; mY = y; }
-    void SetX(int x) { mX = x; }
-    void SetY(int y) { mY = y; }
-    void SetXY(int x, int y) { mX = x; mY = y; }
-    int GetX() { return mX; }
-    int GetY() { return mY; }
-};
-
 struct CompareBFS
 {
     bool operator()(Cell* a, Cell* b)
@@ -82,10 +84,9 @@ struct CompareASTAR
     }
 };
 
-std::vector< std::vector<Cell>> TILES;
-//std::vector< std::vector<char>> TILES;
 
-int MODE1 = 6;
+std::vector< std::vector<Cell>> TILES;
+
 
 int GenerateRandomNumber(int min, int max)
 {
@@ -753,7 +754,8 @@ Vector2 IA5(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
         }
 
         TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('-');
-        DrawWeight(player, ia, obstacle);
+        //DrawWeight(player, ia, obstacle);
+        DrawChara(player, ia, obstacle);
         TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(trail);
     }
 
@@ -784,7 +786,7 @@ Vector2 IA6(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
         Cell* cellIA = queue.top();
         queue.pop();
 
-        if (cellIA->GetVisited() == true)
+        if (cellIA->GetVisited())
         {
             continue;
         }
@@ -816,7 +818,7 @@ Vector2 IA6(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
 
         for (Cell* cellN : neighbor)
         {
-            if (cellN->GetVisited() == false && (cellN->GetChara() == path || cellN->GetChara() == trail || cellN->GetChara() == player))
+            if (cellN->GetVisited() == false && (cellN->GetChara() == path || cellN->GetChara() == player))
             {
                 cellN->SetDisStart(disStart + 1);
                 cellN->SetDisEnd(DisToTarget(cellN, cellEnd));
@@ -861,13 +863,12 @@ Vector2 IA7(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
     cellStart->SetDisEnd(DisToTarget(cellStart, cellEnd));
     queue.push(cellStart);
 
-
     while ((int)queue.size() != 0)
     {
         Cell* cellIA = queue.top();
         queue.pop();
 
-        if (cellIA->GetVisited() == true)
+        if (cellIA->GetVisited())
         {
             continue;
         }
@@ -899,7 +900,7 @@ Vector2 IA7(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
 
         for (Cell* cellN : neighbor)
         {
-            if (cellN->GetVisited() == false && (cellN->GetChara() == path || cellN->GetChara() == trail || cellN->GetChara() == player))
+            if (cellN->GetVisited() == false && (cellN->GetChara() == path || cellN->GetChara() == player))
             {
                 cellN->SetDisStart(disStart + 1);
                 cellN->SetDisEnd(DisToTarget(cellN, cellEnd));
@@ -975,7 +976,7 @@ void InputIA(Vector2* cursorIA, Vector2 cursorPlayer, char chara, char player, c
             if (MODE1 == 4) { newCursorIA = IA4(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
             if (MODE1 == 5) { newCursorIA = IA5(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
             if (MODE1 == 6) { newCursorIA = IA6(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); IAPath(cursorIA, cursorPlayer, trail[nb + 1], player, ia, obstacle); }
-            if (MODE1 == 7) { newCursorIA = IA6(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); IAPath(cursorIA, cursorPlayer, trail[nb + 1], player, ia, obstacle); }
+            if (MODE1 == 7) { newCursorIA = IA7(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); IAPath(cursorIA, cursorPlayer, trail[nb + 1], player, ia, obstacle); }
 
             if (MODE1 < 6)
             {
@@ -1003,6 +1004,7 @@ void InputIA(Vector2* cursorIA, Vector2 cursorPlayer, char chara, char player, c
                 {
                     cellPlayer->SetChara(ia);
                 }
+                break;
             }
             nb++;
         }
