@@ -771,7 +771,89 @@ Vector2 IA6(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
 {
     Vector2 newCursorIA = *cursorIA;
 
-    //std::priority_queue<Cell*, std::vector<Cell*>, CompareBFS> queue = std::priority_queue<Cell*, std::vector<Cell*>, CompareBFS>();
+    std::priority_queue<Cell*, std::vector<Cell*>, CompareBFS> queue = std::priority_queue<Cell*, std::vector<Cell*>, CompareBFS>();
+    Cell* cellStart = &TILES[cursorIA->GetX()][cursorIA->GetY()];
+    Cell* cellEnd = &TILES[cursorPlayer.GetX()][cursorPlayer.GetY()];
+    cellStart->SetDisStart(0);
+    cellStart->SetDisEnd(DisToTarget(cellStart, cellEnd));
+    queue.push(cellStart);
+
+
+    while ((int)queue.size() != 0)
+    {
+        Cell* cellIA = queue.top();
+        queue.pop();
+
+        if (cellIA->GetVisited() == true)
+        {
+            continue;
+        }
+
+        newCursorIA = cellIA->GetXY();
+        if (newCursorIA.GetX() == cursorPlayer.GetX() && newCursorIA.GetY() == cursorPlayer.GetY())
+        {
+            return newCursorIA;
+        }
+
+        cellIA->SetVisited(true);
+
+        int iaX = newCursorIA.GetX();
+        int iaY = newCursorIA.GetY();
+
+        int iaRight = iaX + 1;
+        int iaLeft = iaX - 1;
+        int iaDown = iaY + 1;
+        int iaUp = iaY - 1;
+
+        int disStart = cellIA->GetDisStart();
+
+        std::vector<Cell*> neighbor = std::vector<Cell*>();
+
+        neighbor.push_back(&TILES[iaRight][iaY]);
+        neighbor.push_back(&TILES[iaLeft][iaY]);
+        neighbor.push_back(&TILES[iaX][iaDown]);
+        neighbor.push_back(&TILES[iaX][iaUp]);
+
+        for (Cell* cellN : neighbor)
+        {
+            if (cellN->GetVisited() == false && (cellN->GetChara() == path || cellN->GetChara() == trail || cellN->GetChara() == player))
+            {
+                cellN->SetDisStart(disStart + 1);
+                cellN->SetDisEnd(DisToTarget(cellN, cellEnd));
+                cellN->SetCallMe(cellIA);
+
+                queue.push(cellN);
+            }
+        }
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('-');
+        DrawChara(player, ia, obstacle);
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(trail);
+    }
+
+    return Vector2(-1, -1);
+}
+
+void IAPath(Vector2* cursorIA, Vector2 cursorPlayer, char trail, char player, char ia, char obstacle)
+{
+    Vector2 newCursorIA = *cursorIA;
+    Cell* cellEnd = &TILES[cursorPlayer.GetX()][cursorPlayer.GetY()];
+    Cell* cellBegin = &TILES[cursorIA->GetX()][cursorIA->GetY()];
+    while (cellEnd != cellBegin)
+    {
+        newCursorIA = cellEnd->GetXY();
+
+        cellEnd = cellEnd->GetCallMe();
+
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('-');
+        DrawChara(player, ia, obstacle);
+        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(trail);
+    }
+}
+
+Vector2 IA7(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char player, char ia, char obstacle)
+{
+    Vector2 newCursorIA = *cursorIA;
+
     std::priority_queue<Cell*, std::vector<Cell*>, CompareASTAR> queue = std::priority_queue<Cell*, std::vector<Cell*>, CompareASTAR>();
     Cell* cellStart = &TILES[cursorIA->GetX()][cursorIA->GetY()];
     Cell* cellEnd = &TILES[cursorPlayer.GetX()][cursorPlayer.GetY()];
@@ -834,23 +916,6 @@ Vector2 IA6(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char
     return Vector2(-1, -1);
 }
 
-void IA6Path(Vector2* cursorIA, Vector2 cursorPlayer, char trail, char player, char ia, char obstacle)
-{
-    Vector2 newCursorIA = *cursorIA;
-    Cell* cellEnd = &TILES[cursorPlayer.GetX()][cursorPlayer.GetY()];
-    Cell* cellBegin = &TILES[cursorIA->GetX()][cursorIA->GetY()];
-    while (cellEnd != cellBegin)
-    {
-        newCursorIA = cellEnd->GetXY();
-
-        cellEnd = cellEnd->GetCallMe();
-
-        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara('-');
-        DrawChara(player, ia, obstacle);
-        TILES[newCursorIA.GetX()][newCursorIA.GetY()].SetChara(trail);
-    }
-}
-
 int TileHaveNbChara(char chara1)
 {
     int nb = 0;
@@ -909,8 +974,9 @@ void InputIA(Vector2* cursorIA, Vector2 cursorPlayer, char chara, char player, c
             if (MODE1 == 3) { newCursorIA = IA3(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
             if (MODE1 == 4) { newCursorIA = IA4(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
             if (MODE1 == 5) { newCursorIA = IA5(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); }
-            if (MODE1 == 6) { newCursorIA = IA6(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); IA6Path(cursorIA, cursorPlayer, trail[nb + 1], player, ia, obstacle); }
-            
+            if (MODE1 == 6) { newCursorIA = IA6(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); IAPath(cursorIA, cursorPlayer, trail[nb + 1], player, ia, obstacle); }
+            if (MODE1 == 7) { newCursorIA = IA6(cursorIA, cursorPlayer, trail[nb - 1], trail[nb], player, ia, obstacle); IAPath(cursorIA, cursorPlayer, trail[nb + 1], player, ia, obstacle); }
+
             if (MODE1 < 6)
             {
                 int nb_former_trail = TileHaveNbChara(trail[nb - 1]);
