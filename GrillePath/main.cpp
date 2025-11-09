@@ -766,7 +766,7 @@ int DisToTarget(Cell* current, Cell* end)
 {
     Vector2 currentPos = current->GetXY();
     Vector2 endPos = end->GetXY();
-    return abs(currentPos.GetX() - endPos.GetY()) + abs(currentPos.GetY() - endPos.GetY());
+    return abs(currentPos.GetX() - endPos.GetX()) + abs(currentPos.GetY() - endPos.GetY());
 }
 
 Vector2 IA6(Vector2* cursorIA, Vector2 cursorPlayer, char path, char trail, char player, char ia, char obstacle)
@@ -1058,31 +1058,36 @@ void DrawChara(char player, char ia, char obstacle)
             int w = cell.GetWeight();
             if (c == '*')
             {
-                SetConsoleTextAttribute(console, ((FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN) * 2.f) * HighWeight(w));
+                //SetConsoleTextAttribute(console, ((FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN) * 2.f) * HighWeight(w));
+                SetConsoleTextAttribute(console, (FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN) * 2.f);
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
             else if (c == '+')
             {
-                SetConsoleTextAttribute(console,(FOREGROUND_GREEN) * HighWeight(w));
+                //SetConsoleTextAttribute(console,(FOREGROUND_GREEN) * HighWeight(w));
+                SetConsoleTextAttribute(console, FOREGROUND_GREEN);
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
             else if (c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
             {
-                SetConsoleTextAttribute(console, (FOREGROUND_GREEN * ((int)c/10) | FOREGROUND_RED * ((int)c / 20) | FOREGROUND_BLUE * ((int)c / 30)) * HighWeight(w));
+                //SetConsoleTextAttribute(console, (FOREGROUND_GREEN * ((int)c/10) | FOREGROUND_RED * ((int)c / 20) | FOREGROUND_BLUE * ((int)c / 30)) * HighWeight(w));
+                SetConsoleTextAttribute(console, FOREGROUND_GREEN * ((int)c / 10) | FOREGROUND_RED * ((int)c / 20) | FOREGROUND_BLUE * ((int)c / 30));
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
             else if (c == '-' || c == ia)
             {
-                SetConsoleTextAttribute(console,(FOREGROUND_RED) * HighWeight(w));
+                //SetConsoleTextAttribute(console,(FOREGROUND_RED) * HighWeight(w));
+                SetConsoleTextAttribute(console, FOREGROUND_RED);
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
             else if (c == player)
             {
-                SetConsoleTextAttribute(console, (FOREGROUND_BLUE | FOREGROUND_RED) * HighWeight(w));
+                //SetConsoleTextAttribute(console, (FOREGROUND_BLUE | FOREGROUND_RED) * HighWeight(w));
+                SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED);
                 std::cout << c;
                 SetConsoleTextAttribute(console, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN);
             }
